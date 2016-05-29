@@ -1,274 +1,279 @@
 # -*- coding: utf-8 -*-
-try:
-    import sys
-    from PyQt5.QtCore import Qt, QSignalMapper
-    from PyQt5.QtWidgets import (QMainWindow, QWidget, QLCDNumber, QSlider,
-        QVBoxLayout, QApplication, QLabel, QHBoxLayout, QComboBox, QAction, QInputDialog, QMessageBox, QPushButton, QDesktopWidget, QLineEdit, QFormLayout, QGroupBox)
-    from PyQt5.QtGui import QIcon, QColor
-    import os
-    from core import Core
+import sys
+from PyQt5.QtCore import Qt, QSignalMapper
+from PyQt5.QtWidgets import (QMainWindow, QWidget, QLCDNumber, QSlider,
+    QVBoxLayout, QApplication, QLabel, QHBoxLayout, QComboBox, QAction, QInputDialog, QMessageBox, QPushButton, QDesktopWidget, QLineEdit, QFormLayout, QGroupBox, QSpinBox, QGraphicsScene, QFrame)
+from PyQt5.QtGui import QIcon, QColor, QPainter, QBrush, QPen, QPalette
+import os
+from core import Core
+
+#-------------------------
+T_WINDOW_TITLE='RoboHand controller'
+T_SETTINGS_GROUP_HEADER='Настройки'
+T_CONTROL_GROUP_HEADER='Управление'
+T_CHOOSE_PORT_LABEL='Выберите порт:'
+T_CHOOSE_PORT_LABEL_STATE='Состояние'
+T_CHOOSE_PORT_LABEL_INFO='<font color="blue">Не подключено</font>'
+T_CHOOSE_SERIAL_SPEED='Выберите скорость соединения:'
+T_AXIS_NUMBER='Кол-во степеней свободы:'
+T_SET_COORD_RANGE='Диапазон координат, мм:'
+T_COORD_NAMES=['X', 'Y', 'Z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
+T_CURRENT_POSITION_LABEL='Координата:'
+T_DISPLAY_AREAS_GROUP_HEADER='Положение манипулятора'
+T_CONNECTING_STATE='Состояние подключения'
+#-------------------------
+styleFile=open('style.css', 'r')
+styleSheet=styleFile.read()
+styleFile.close()
+class Controller(QWidget):
     
-    #-------------------------
-    T_SETTINGS_GROUP_HEADER='Настройки'
-    T_CONTROL_GROUP_HEADER='Управление'
-    T_CHOOSE_PORT_LABEL='Выберите порт:'
-    T_CHOOSE_PORT_LABEL_STATE='Состояние'
-    T_CHOOSE_PORT_LABEL_INFO='<font color="blue">Не подключено</font>'
-    T_CHOOSE_SERIAL_SPEED='Выберите скорость соединения:'
-    T_AXIS_NUMBER='Кол-во степеней свободы:'
-    T_SET_COORD_RANGE='Диапазон координат:'
-    T_COORD_NAMES=['X', 'Y', 'Z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
-    T_CURRENT_POSITION_LABEL='Координата:'
-    #-------------------------
-    class Controller(QWidget):
+    def __init__(self):
+        super().__init__()
         
-        def __init__(self):
-            super().__init__()
-            
-            self.mainBox=QVBoxLayout(self)
-            
-            self.createSettingsGroup() #создать верхнее меню настроек
-            self.createControlGroup()
-            
-            self.mainBox.addWidget(self.menuBoxFrame)
-            self.mainBox.addWidget(self.controlGroupFrame)
-            self.mainBox.addStretch(1)
-            
-            self.setGeometry(400, 200, 700, 200)
-            self.show()
+        #-----Importing StyleSheet--------------------------------------
+        '''self.styleFile=open('style.css', 'r')
+        self.styleSheet=self.styleFile.read()
+        self.styleFile.close()'''
+        self.setStyleSheet(styleSheet)
+        #-----End-import stylesheet-------------------------------------
         
-        def createSettingsGroup(self):
-            self.menuBox=QHBoxLayout(self)
+        self.mainBox=QVBoxLayout()
+        
+        self.createSettingsGroup() #создать верхнее меню настроек
+        self.createControlGroup()
+        
+        
+        self.createDisplayAreas(Core.displaysNumber)
+        
+        self.displayAreasMainBox=QHBoxLayout()
+        
+        self.mainBox.addWidget(self.menuBoxFrame)
+        self.mainBox.addStretch(1)
+        self.mainBox.addWidget(self.controlGroupFrame)
+        self.mainBox.addStretch(1)
+        self.mainBox.addLayout(self.displayAreasBox)
+        #self.mainBox.addStretch(1)
+        
+        self.setLayout(self.mainBox)
+        self.setWindowTitle(T_WINDOW_TITLE)
+        self.setWindowIcon(QIcon('icon.png'))
+        self.setGeometry(400, 200, 500, 300)
+        self.show()
+    
+    def createSettingsGroup(self):
+        self.menuBox=QHBoxLayout(self)
+                    
+        self.menuBoxFrame=QGroupBox(T_SETTINGS_GROUP_HEADER, self)
+        
+        #------HorMenuBlock-1----------------------------------------------
+        self.choosePortBox=QFormLayout(self)
+        
+        self.choosePortCombo=QComboBox(self)
+        self.choosePortCombo.addItem('Не выбрано')
+        self.choosePortCombo.addItems(Core.portList)
+        
+        self.choosePortLabelInfo=QLabel(T_CHOOSE_PORT_LABEL_INFO, self)
+        
+        self.choosePortBox.addRow(T_CHOOSE_PORT_LABEL, self.choosePortCombo)
+        self.choosePortBox.addRow(T_CHOOSE_PORT_LABEL_STATE, self.choosePortLabelInfo)
+        #-----End - HorMenuBlock-1-----------------------------------------
+        
+        
+        #-----HorMenuBlock-2-----------------------------------------------
+        self.chooseSpeedAxisBox=QFormLayout(self)
+        
+        self.chooseSpeedCombo=QComboBox(self)
+        self.chooseSpeedCombo.addItems(list(map(str, Core.serialSpeedCases)))
+        
+        self.chooseAxisNumberText=QPushButton('Подключено')
+        self.chooseAxisNumberText.setCheckable(1)
+        self.chooseAxisNumberText.setChecked(1)
+        self.chooseAxisNumberText.setObjectName('chooseAxisNumberText')
+        #self.chooseAxisNumberText.setStyleSheet(self.styleSheet)
+        self.chooseAxisNumberText.toggled.connect(self.disconnect)
+        
+        #self.chooseAxisNumberText.setFixedWidth(100)            
+        
+        self.chooseSpeedAxisBox.addRow(T_CHOOSE_SERIAL_SPEED, self.chooseSpeedCombo)
+        self.chooseSpeedAxisBox.addRow(T_CONNECTING_STATE, self.chooseAxisNumberText)
+        #-----End - HorMenuBlock-2-----------------------------------------
+        
+        #-----HorMenuBlock-3-----------------------------------------------
+        self.setCoordRangeBox=QVBoxLayout()
+        
+        self.setCoordRangeBoxLeft=QHBoxLayout()
+        self.setCoordRangeBoxRight=QHBoxLayout()
+        
+        self.setCoordRangeLabel=QLabel(T_SET_COORD_RANGE)
+        
+        self.setCoordRangeLabels=[0]*Core.axisNumber
+        self.setCoordRangeTexts=[0]*Core.axisNumber
+        
+        self.setCoordRangeBoxLeft.addWidget(self.setCoordRangeLabel)
+        self.W=0
+        for i in range(Core.axisNumber):
+            self.setCoordRangeLabels[i]=QLabel(T_COORD_NAMES[i])
+            self.setCoordRangeTexts[i]=QSpinBox()
+            self.setCoordRangeTexts[i].setSingleStep(5)
+            self.setCoordRangeTexts[i].setRange(-300, 300)
+            self.setCoordRangeTexts[i].setMaximumWidth(40)
+            
+            self.setCoordRangeBoxRight.addWidget(self.setCoordRangeLabels[i])
+            self.setCoordRangeBoxRight.addWidget(self.setCoordRangeTexts[i])
+            self.setCoordRangeBoxRight.addStretch(1)                
+        
+        self.setCoordRangeBox.addLayout(self.setCoordRangeBoxLeft)
+        self.setCoordRangeBox.addLayout(self.setCoordRangeBoxRight)
+        self.setCoordRangeBox.addStretch(1)
+        #-----End - HorMenuBlock-3-----------------------------------------
+        
+        #-----Final building Window----------------------------------------
+        self.menuBox.addLayout(self.choosePortBox)
+        self.menuBox.addStretch(1)
+        self.menuBox.addLayout(self.chooseSpeedAxisBox)
+        self.menuBox.addStretch(1)
+        self.menuBox.addLayout(self.setCoordRangeBox)
+        #self.menuBox.addStretch(1)
+        
+        self.menuBoxFrame.setLayout(self.menuBox)            
+    
+    def createControlGroup(self):
+        self.controlGroupFrame=QGroupBox(T_CONTROL_GROUP_HEADER, self)
+        
+        self.slidersSignalMapper=QSignalMapper(self)
+        
+        self.controlGroupLayout=QHBoxLayout(self)
+        
+        self.controlGroupLayoutJoysticks=QFormLayout()
+        self.controlGroupLayoutCurrentValue=QFormLayout()
+        
+        self.controlGroupJoysticks=[0]*3
+        self.controlGroupCurrentValue=[0]*3
+        for i in range(3):
+            self.controlGroupJoysticks[i]=QSlider(Qt.Horizontal)
+            self.controlGroupJoysticks[i].setMinimumWidth(500)
+            self.controlGroupJoysticks[i].setTickPosition(QSlider.TicksLeft)
+            self.controlGroupLayoutJoysticks.addRow(T_COORD_NAMES[i], self.controlGroupJoysticks[i])
+            
+            self.slidersSignalMapper.setMapping( self.controlGroupJoysticks[i], str(i))
+            
+            self.controlGroupJoysticks[i].valueChanged[int].connect(self.slidersSignalMapper.map)
+            
+            self.controlGroupCurrentValue[i]=QLineEdit('0')
+            self.controlGroupCurrentValue[i].setMaximumWidth(50)
+            self.controlGroupLayoutCurrentValue.addRow(T_CURRENT_POSITION_LABEL, self.controlGroupCurrentValue[i])
+        
+        self.slidersSignalMapper.mapped[str].connect(self.handleSliderValue)
+        self.controlGroupLayout.addLayout(self.controlGroupLayoutJoysticks)
+        self.controlGroupLayout.addStretch(1)
+        self.controlGroupLayout.addLayout(self.controlGroupLayoutCurrentValue)
+        
+        self.controlGroupFrame.setLayout(self.controlGroupLayout)
+    
+    def createDisplayAreas(self, numb):
+        self.displayAreas=[0]*numb
+        self.displayAreasBox=QHBoxLayout()
+        '''self.displayAreaBox=QGroupBox(T_DISPLAY_AREAS_GROUP_HEADER, self)
+        
+        self.y=QLabel(self)
+        self.y.resize(400, 00)
+        
+        
+        
+        self.g11=QHBoxLayout()
+        self.g11.addWidget(self.y)
+        self.displayAreaBox.setLayout(self.g11)'''
+        for i in range(numb):
+            displayAreaBox=QGroupBox()
+            ttt=QHBoxLayout()
+            self.displayAreas[i]=DisplayImg(700)
+            self.displayAreas[i].setObjectName('ard')
+            #self.displayAreas[i].resize(200, 200)
+            ttt.addWidget(self.displayAreas[i])
+            displayAreaBox.setLayout(ttt)
+            self.displayAreasBox.addWidget(displayAreaBox)
+    '''def paintEvent(self, e):
+        self.p=QPainter(self.y)
+        self.p.begin(self.y)
+        self.p.setPen(QPen(Qt.red))
+        self.p.drawLine(0, 0, 200, 200)
+        self.p.end()'''
+    def disconnect(self):
+        state=['Отключено', 'Подключено']
+        z=int(self.chooseAxisNumberText.isChecked())
+        self.chooseAxisNumberText.setText(state[z])
+        z=int(not z)
+        print(z)
+    def handleSliderValue(self, sender):
+        print(sender, str(self.controlGroupJoysticks[int(sender)].value()))
+        
+    def handleValue(self, value, sender):
+        try:
+            sender=value//(self.sliderMaxValue)
+            val=value-sender*self.sliderMaxValue-self.sliderMaxValue/2
+            self.sliderPosition[sender]=val
+            self.controller.sliderBoard[sender][3].setText(str(val))
+            Core.updateCoords(sender, val)
+            self.statusBar().showMessage(Core.sendPosition())
+        except: self.statusBar().showMessage('An ERROR in "handleValue"')
+        
+        
+    def updatePort(self, port):
+        try:
+            if port=='Не выбрано':
+                Core.closeSerial()
+                self.updateLabel()            
+    
+            else:
+                flag=Core.connect_(port)
+                self.updateLabel(port, flag)
+        except: self.statusBar().showMessage('An ERROR in "updatePort"')
+                
+                 
+        
+    def updateLabel(self, port=-1, flag=False):
+        try:
+            if port!=-1:
+            
+                if (flag==True):
                         
-            self.menuBoxFrame=QGroupBox(T_SETTINGS_GROUP_HEADER, self)
-            
-            #------HorMenuBlock-1----------------------------------------------
-            self.choosePortBox=QFormLayout(self)
-            
-            self.choosePortCombo=QComboBox(self)
-            self.choosePortCombo.addItem('Не выбрано')
-            self.choosePortCombo.addItems(Core.portList)
-            
-            self.choosePortLabelInfo=QLabel(T_CHOOSE_PORT_LABEL_INFO, self)
-            
-            self.choosePortBox.addRow(T_CHOOSE_PORT_LABEL, self.choosePortCombo)
-            self.choosePortBox.addRow(T_CHOOSE_PORT_LABEL_STATE, self.choosePortLabelInfo)
-            #-----End - HorMenuBlock-1-----------------------------------------
-            
-            
-            #-----HorMenuBlock-2-----------------------------------------------
-            self.chooseSpeedAxisBox=QFormLayout(self)
-            
-            self.chooseSpeedCombo=QComboBox(self)
-            self.chooseSpeedCombo.addItems(list(map(str, Core.serialSpeedCases)))
-            
-            self.chooseAxisNumberText=QLineEdit()
-            self.chooseAxisNumberText.setMaximumWidth(40)            
-            
-            self.chooseSpeedAxisBox.addRow(T_CHOOSE_SERIAL_SPEED, self.chooseSpeedCombo)
-            self.chooseSpeedAxisBox.addRow(T_AXIS_NUMBER, self.chooseAxisNumberText)
-            #-----End - HorMenuBlock-2-----------------------------------------
-            
-            #-----HorMenuBlock-3-----------------------------------------------
-            self.setCoordRangeBox=QVBoxLayout()
-            
-            self.setCoordRangeBoxLeft=QHBoxLayout()
-            self.setCoordRangeBoxRight=QHBoxLayout()
-            
-            self.setCoordRangeLabel=QLabel(T_SET_COORD_RANGE)
-            
-            self.setCoordRangeLabels=[0]*Core.axisNumber
-            self.setCoordRangeTexts=[0]*Core.axisNumber
-            
-            self.setCoordRangeBoxLeft.addWidget(self.setCoordRangeLabel)
-            self.W=0
-            for i in range(Core.axisNumber):
-                self.setCoordRangeLabels[i]=QLabel(T_COORD_NAMES[i])
-                self.setCoordRangeTexts[i]=QLineEdit()
-                self.setCoordRangeTexts[i].setMaximumWidth(30)
-                
-                self.setCoordRangeBoxRight.addWidget(self.setCoordRangeLabels[i])
-                self.setCoordRangeBoxRight.addWidget(self.setCoordRangeTexts[i])
-                self.setCoordRangeBoxRight.addStretch(1)                
-            
-            self.setCoordRangeBox.addLayout(self.setCoordRangeBoxLeft)
-            self.setCoordRangeBox.addLayout(self.setCoordRangeBoxRight)
-            self.setCoordRangeBox.addStretch(1)
-            #-----End - HorMenuBlock-3-----------------------------------------
-            
-            #-----Final building Window----------------------------------------
-            self.menuBox.addLayout(self.choosePortBox)
-            self.menuBox.addStretch(1)
-            self.menuBox.addLayout(self.chooseSpeedAxisBox)
-            self.menuBox.addStretch(1)
-            self.menuBox.addLayout(self.setCoordRangeBox)
-            self.menuBox.addStretch(1)
-            
-            self.menuBoxFrame.setLayout(self.menuBox)            
-        
-        def createControlGroup(self):
-            self.controlGroupFrame=QGroupBox(T_CONTROL_GROUP_HEADER, self)
-            
-            self.slidersSignalMapper=QSignalMapper(self)
-            
-            self.controlGroupLayout=QHBoxLayout(self)
-            
-            self.controlGroupLayoutJoysticks=QFormLayout()
-            self.controlGroupLayoutCurrentValue=QFormLayout()
-            
-            self.controlGroupJoysticks=[0]*3
-            self.controlGroupCurrentValue=[0]*3
-            for i in range(3):
-                self.controlGroupJoysticks[i]=QSlider(Qt.Horizontal)
-                self.controlGroupJoysticks[i].setMinimumWidth(500)
-                self.controlGroupLayoutJoysticks.addRow(T_COORD_NAMES[i], self.controlGroupJoysticks[i])
-                
-                self.slidersSignalMapper.setMapping( self.controlGroupJoysticks[i], str(i))
-                
-                self.controlGroupJoysticks[i].valueChanged[int].connect(self.slidersSignalMapper.map)
-                
-                self.controlGroupCurrentValue[i]=QLineEdit('0')
-                self.controlGroupCurrentValue[i].setMaximumWidth(50)
-                self.controlGroupLayoutCurrentValue.addRow(T_CURRENT_POSITION_LABEL, self.controlGroupCurrentValue[i])
-            
-            self.slidersSignalMapper.mapped[str].connect(self.handleSliderValue)
-            self.controlGroupLayout.addLayout(self.controlGroupLayoutJoysticks)
-            self.controlGroupLayout.addStretch(1)
-            self.controlGroupLayout.addLayout(self.controlGroupLayoutCurrentValue)
-            
-            self.controlGroupFrame.setLayout(self.controlGroupLayout)
-        def handleSliderValue(self, sender):
-            print(sender, str(self.controlGroupJoysticks[int(sender)].value()))
-            '''try:
-                self.minCoord=-100
-                self.maxCoord=100
-                self.vbox=QVBoxLayout()
-            
-                self.c=QComboBox(self)
-                self.c.addItem('Не выбрано')
-                self.c.addItems(Core.portList)
-                self.c.activated[str].connect(self.updatePort)
-                
-                self.setPortLabel=QLabel(setPortText, self)
-                hbox01=QHBoxLayout()
-                hbox01.addWidget(self.setPortLabel)
-                hbox01.addWidget(self.c)
-                
-                self.j=QLabel('<font color="blue">Не подключено</font>')
-                
-                hbox0=QHBoxLayout()
-                hbox0.addWidget(self.j)
-                
-                self.vbox.addLayout(hbox01)
-                self.vbox.addLayout(hbox0)
-                self.vbox.addStretch(2)
-                
-                #----------------------------------- 
-               
-                # генерация области с ползунками
-                # за один проход создается набор для одного ползунка 
-                # и вставляется сначала в горизонтальный блок,
-                # а затем - в главный вертикальный
-                # \|/
-                self.sliderSignalMapper=QSignalMapper(self)
-                for i in range(sliderCount): 
-                    
-                    # создание виджетов
-                    
-                    self.sliderBoard[i][0]=QLabel(K[i], self)
-                    self.sliderBoard[i][1]=QSlider(Qt.Horizontal, self)
-                    self.sliderBoard[i][2]=QLabel(N, self)
-                    self.sliderBoard[i][3]=QLabel('0', self)
-                    
-                    #----------------------------------
-                    # первоначальная настройка виджетов
-                    
-                    #connecting slider[i] with QSignalMapper
-                    self.sliderSignalMapper.setMapping(self.sliderBoard[i][1], str(i))
-                    
-                    self.sliderBoard[i][1].setMinimum(self.minCoord)
-                    self.sliderBoard[i][1].setMaximum(self.maxCoord)
-                    self.sliderBoard[i][1].setValue(self.sliderPosition[i])
-                    self.sliderBoard[i][1].valueChanged[int].connect(self.sliderSignalMapper.map)
-                    self.sliderBoard[i][1].setMinimumWidth(400)
-                    
-                    #вычисление стартового значения ползунков
-                    val=self.sliderBoard[i][1].value()-i*self.sliderMaxValue       
-                    self.sliderBoard[i][3].setText(str(val))
-                    
-                    #-------------------------------------------
-                    # созданные виджеты компонуются в блоки
-                    # и вставляются в главный вертикальный слой.
-                    #-------------------------------------------
-                    
-                    self.hbox[i]=QHBoxLayout()
-                    self.hbox[i].addWidget(self.sliderBoard[i][0])
-                    self.hbox[i].addWidget(self.sliderBoard[i][1])
-                    self.hbox[i].addStretch(1)
-                    self.hbox[i].addWidget(self.sliderBoard[i][2])
-                    self.hbox[i].addWidget(self.sliderBoard[i][3])
-                    self.hbox[i].addStretch(1)
-                    
-                    self.vbox.addLayout(self.hbox[i])  
-                    
-                    # ---------------окончание генерирующего цикла--------------
-                
-                #connecting (sliderSignalMapper) to the function
-                self.sliderSignalMapper.mapped[str].connect(self.handleValue)
-                
-                #помещение блока с ползунками в Класс self
-                self.setLayout(self.vbox)
-            except:
-                print('Init error')'''
-            
-        def handleValue(self, value, sender):
-            try:
-                sender=value//(self.sliderMaxValue)
-                val=value-sender*self.sliderMaxValue-self.sliderMaxValue/2
-                self.sliderPosition[sender]=val
-                self.controller.sliderBoard[sender][3].setText(str(val))
-                Core.updateCoords(sender, val)
-                self.statusBar().showMessage(Core.sendPosition())
-            except: self.statusBar().showMessage('An ERROR in "handleValue"')
-            
-            
-        def updatePort(self, port):
-            try:
-                if port=='Не выбрано':
-                    Core.closeSerial()
-                    self.updateLabel()            
-        
+                    self.j.setText('<font color="green">Arduino успешно подключено к порту '+port+'</font>')
+                                   
+                        
                 else:
-                    flag=Core.connect_(port)
-                    self.updateLabel(port, flag)
-            except: self.statusBar().showMessage('An ERROR in "updatePort"')
-                    
-                     
+                    self.j.setText('<FONT COLOR="red">Не удалось подключиться к порту '+port+'</font>')
+            else:
+                self.j.setText('<font color="blue">Не подключено</font>')
+        except: self.statusBar().showMessage('An ERROR in "updateLabel"')
+                       
+
             
-        def updateLabel(self, port=-1, flag=False):
-            try:
-                if port!=-1:
-                
-                    if (flag==True):
-                            
-                        self.j.setText('<font color="green">Arduino успешно подключено к порту '+port+'</font>')
-                                       
-                            
-                    else:
-                        self.j.setText('<FONT COLOR="red">Не удалось подключиться к порту '+port+'</font>')
-                else:
-                    self.j.setText('<font color="blue">Не подключено</font>')
-            except: self.statusBar().showMessage('An ERROR in "updateLabel"')
-                           
-    
-                
-        def closeEvent(self, event):
-            Core.closeSerial()
-except:
-    print('Error in controller')
+    def closeEvent(self, event):
+        Core.closeSerial()
+
+class DisplayImg(QWidget):
+    def __init__(self, size):
+        super().__init__()
+        self.setFixedHeight(size+1)
+        self.setFixedWidth(size+1)
+        Pal=QPalette()
+        Pal.setColor(QPalette.Background, Qt.white)
+        self.setAutoFillBackground(True)
+        self.setPalette(Pal)
+        
+    def paintEvent(self, e):
+        painter=QPainter(self)
+        painter.begin(self)
+        self.drawGrid(painter)
+        painter.end()
+    def drawGrid(self, painter):
+        painter.setPen(Qt.gray)
+        for i in range(0, self.width()+2, 10):
+            painter.drawLine(i, 0, i, self.height())
+        for i in range(0, self.height()+2, 10):
+            painter.drawLine(0, i, self.width(), i)        
     
 app = QApplication(sys.argv)
-        
 core=Core()
 contr=Controller()
 #gui=Window()
