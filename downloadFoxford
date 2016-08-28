@@ -1,0 +1,37 @@
+from selenium  import webdriver
+import time
+import os
+domen='http://foxford.ru'
+
+driver=webdriver.Chrome("C:\\chromedriver")
+driver.get("http://foxford.ru")
+i=input()
+driver.get("http://foxford.ru/courses/266")
+elemts=driver.find_elements_by_class_name("lesson")
+t=elemts[1].get_attribute("href")
+t=int(t[len(t)-4:len(t)])
+print('t=', t)
+for i in elemts:
+    #link=str(i.get_attribute("href"))
+    link=domen+"/lessons/"+str(t)+"/conspects/"
+    print('link='+link)
+    driver.get(link)
+    local_menu_count=len(driver.find_elements_by_class_name("page_menu_section"))-1
+    print('local_menu_count=', local_menu_count)
+    try:
+        os.mkdir("C:\\F\\"+str(elemts.index(i)+1))
+    except: print('Ошибка: папка уже существует')
+    for j in range(1, local_menu_count+1):
+        #driver.get("http://foxford.ru/lessons/"+str(t)+"/conspects/"+str(j))
+        driver.get(link+str(j))
+        print(j)
+        F=open('C:\\F\\'+str(elemts.index(i)+1)+'\\'+str(j)+'.html', 'w')
+        a=driver.page_source
+        a=a.replace('href="', 'href="http://foxford.ru')
+        a=a.replace('src="', 'src="http://foxford.ru').replace('<meta charset="utf-8" />', '<meta charset="Unicode" />')
+        try:
+            print(a, file=F)
+        except: print('Ошибка записи')
+        F.close()
+        #http://foxford.ru/lessons/6975/conspects/1
+    t+=1
