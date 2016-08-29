@@ -1,17 +1,30 @@
+# -*- coding: utf-8 -*- 
 from selenium  import webdriver
 import time
 import os
+print("Start")
 domen='http://foxford.ru'
-
+course_page="http://foxford.ru/courses/251"
+course_name="CS Extended"
 driver=webdriver.Chrome("C:\\chromedriver")
+dirWay="E:\\Andrey\\Videos\\VideoClasses\\Foxford\\Conspects\\"
 driver.get("http://foxford.ru")
-i=input()
-driver.get("http://foxford.ru/courses/266")
+i=input('Waiting for loging in site')
+print('1')
+driver.get(course_page)
+print('2')
 elemts=driver.find_elements_by_class_name("lesson")
+print('3')
 t=elemts[1].get_attribute("href")
 t=int(t[len(t)-4:len(t)])
 print('t=', t)
-for i in elemts:
+try:
+    os.mkdir(dirWay+course_name)
+except:
+    print("Can't create a course dir")
+
+errCounter=0
+for i in elemts[1:]:
     #link=str(i.get_attribute("href"))
     link=domen+"/lessons/"+str(t)+"/conspects/"
     print('link='+link)
@@ -19,19 +32,24 @@ for i in elemts:
     local_menu_count=len(driver.find_elements_by_class_name("page_menu_section"))-1
     print('local_menu_count=', local_menu_count)
     try:
-        os.mkdir("C:\\F\\"+str(elemts.index(i)+1))
+        os.mkdir(dirWay+course_name+"\\"+str(elemts.index(i)+1))
     except: print('Ошибка: папка уже существует')
     for j in range(1, local_menu_count+1):
         #driver.get("http://foxford.ru/lessons/"+str(t)+"/conspects/"+str(j))
         driver.get(link+str(j))
         print(j)
-        F=open('C:\\F\\'+str(elemts.index(i)+1)+'\\'+str(j)+'.html', 'w')
+        F=open(dirWay+course_name+"\\"+str(elemts.index(i)+1)+'\\'+str(j)+'.html', 'w')
         a=driver.page_source
         a=a.replace('href="', 'href="http://foxford.ru')
-        a=a.replace('src="', 'src="http://foxford.ru').replace('<meta charset="utf-8" />', '<meta charset="Unicode" />')
+        a=a.replace('src="', 'src="http://foxford.ru').replace('<meta charset="UTF-16LE" />', '<meta charset="Unicode" />').replace('style="display: none;"', 'style="display: block;"')
+        a=a.replace('href="http://foxford.ru/lessons/'+str(t)+'/conspects/', '')
         try:
             print(a, file=F)
-        except: print('Ошибка записи')
+        except:
+            print('Ошибка записи')
+            errCounter+=1
         F.close()
         #http://foxford.ru/lessons/6975/conspects/1
     t+=1
+print("Finish")
+print('Write errors: ', errCounter)
