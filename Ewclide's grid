@@ -2,6 +2,7 @@ import time
 
 N=10393830
 
+#------------------------------
 a=time.time()
 grid=[True]*(N+1)
 grid[0]=grid[1]=False
@@ -12,6 +13,8 @@ ans1=[i for i in range(2, N+1) if grid[i]==True]
 print(time.time()-a)
 #print(ans1)
 
+#----------------_-------------
+
 '''a=time.time()
 grid=[True]*(N+1)
 grid[0]=grid[1]=False
@@ -21,6 +24,8 @@ for i in range(2, N+1):
 ans2=[i for i in range(2, N+1) if grid[i]==True]
 print(time.time()-a)
 #print(ans2)'''
+
+#-------------------------------
 
 '''a=time.time()
 grid=[True]*(N+1)
@@ -34,6 +39,8 @@ ans3=[i for i in range(2, N+1) if grid[i]==True]
 print(time.time()-a)
 #print(ans3)'''
 
+#---------------------------------
+
 c=time.time()
 grid=[True]*(N+1)
 grid[0]=grid[1]=False
@@ -45,6 +52,8 @@ for i in range(3, int(N**0.5)+1, 2):
 ans4=[i for i in range(2, N+1) if grid[i]==True]
 print(time.time()-c)
 
+#-----------_-_------------------
+
 c=time.time()
 grid=[True]*((N+1)//2)
 grid[0]=False
@@ -54,5 +63,9 @@ for i in range(3, int(N**0.5)+1, 2):
 ans5=[2]+[i*2+1 for i in range(0, (N+1)//2) if grid[i]==True]
 print(time.time()-c)
 #print(ans5)
+
+#------------------------
+
+#проверка правильности результатов путем сравнения результатов всех алгоритмов 
 if ans1==ans4==ans5: print('OK')
 else: print('bad')
