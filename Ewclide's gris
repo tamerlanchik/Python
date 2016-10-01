@@ -1,0 +1,58 @@
+import time
+
+N=10393830
+
+a=time.time()
+grid=[True]*(N+1)
+grid[0]=grid[1]=False
+for i in range(2, int(N**0.5)+1):
+    for j in range(i*2, N+1, i):
+        grid[j]=False
+ans1=[i for i in range(2, N+1) if grid[i]==True]
+print(time.time()-a)
+#print(ans1)
+
+'''a=time.time()
+grid=[True]*(N+1)
+grid[0]=grid[1]=False
+for i in range(2, N+1):
+    for j in range(i*2, N+1, i):
+        grid[j]=False
+ans2=[i for i in range(2, N+1) if grid[i]==True]
+print(time.time()-a)
+#print(ans2)'''
+
+'''a=time.time()
+grid=[True]*(N+1)
+grid[0]=grid[1]=False
+for j in range(4, N+1, 2):
+    grid[j]=False
+for i in range(3, N+1, 2):
+    for j in range(i*3, N+1, i*2):
+        grid[j]=False
+ans3=[i for i in range(2, N+1) if grid[i]==True]
+print(time.time()-a)
+#print(ans3)'''
+
+c=time.time()
+grid=[True]*(N+1)
+grid[0]=grid[1]=False
+for j in range(4, N+1, 2):
+    grid[j]=False
+for i in range(3, int(N**0.5)+1, 2):
+    for j in range(i*3, N+1, i*2):
+        grid[j]=False
+ans4=[i for i in range(2, N+1) if grid[i]==True]
+print(time.time()-c)
+
+c=time.time()
+grid=[True]*((N+1)//2)
+grid[0]=False
+for i in range(3, int(N**0.5)+1, 2):
+    for j in range(i//2+i, (N+1)//2, i):
+        grid[j]=False
+ans5=[2]+[i*2+1 for i in range(0, (N+1)//2) if grid[i]==True]
+print(time.time()-c)
+#print(ans5)
+if ans1==ans4==ans5: print('OK')
+else: print('bad')
