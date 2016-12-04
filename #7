@@ -1,0 +1,163 @@
+import random
+
+f=[[' ']*80 for i in range(25)]
+i=0
+a=[]
+while not a:
+    a=list(input())
+    if a==[]: break
+    f[i]=a+[' ']*(80-len(a))
+    i+=1
+for i in f[:12]:
+    print(i[:29])
+def move(c):
+    global f
+    global i
+    global j
+    global vect
+    b=len(f[i])
+    if c=='>':
+        j=(j+1)%b
+        while f[i][j]==' ':
+            j=(j+1)%b
+        vect=[0, 1]
+    elif c=='<':
+        j=(j-1)%b
+        while f[i][j]==' ': j=(j-1)%b
+        vect=[0, -1]
+    elif c=='v':
+        i=(i+1)%25
+        while f[i][j]==' ': i=(i+1)%25
+        vect=[1, 0]
+    elif c=='^':
+        i=(i-1)%25
+        while f[i][j]==' ': i=(i-1)%25
+        vect=[-1, 0]
+    
+    return vect
+stack=[-1]
+symb=''
+al=0
+for t in range(25):
+    for r in range(len(f[t])):
+        if f[t][r]!=' ':
+            i=t
+            j=r
+            al=1
+            break
+    if al==1: break
+k=f[i][j]
+l=0
+vect=[0, 1]
+print("start")
+while k!='@':
+    mov=0
+    c=f[i][j]
+    '''if c==' ':
+        i=(i-vect[0])%25
+        j=(j-vect[1])%80
+        if abs(vect[0])==1:
+            if f[i][(j+1)%80]!=' ':
+                j=(j+1)%80
+                vect=[0, 1]
+            else:
+                j=(j-1)%80
+                vect=[0, -1]
+        else:
+            if f[(i-1)%25][j]!=' ':
+                i=(i-1)%25
+                vect=[-1, 0]
+            else:
+                i=(i+1)%25
+                vect=[1, 0]
+        mov=1'''
+    if c in '><^v':
+        vect=move(c)
+        mov=1
+    elif c=='_':
+        if stack.pop==0: move('>')
+        else:            move('<')
+        mov=1
+    elif c=='|':
+        if stack.pop()==0: move('v')
+        else:            move('^')
+        mov=1
+    elif c=='?':
+        temp=random.choice('><^v')
+        move(temp)
+        #print("rand ", temp)
+        mov=1
+    elif c=='#': j=(j+2)%len(f[i])
+    
+    
+    elif c==':': stack.append(stack[-1])
+    elif c=='\\':
+        if len(stack)>=2:
+            temp=stack[-1]
+            stack[-1]=stack[-2]
+            stack[-2]=temp
+    
+    elif c=='$': stack.pop()
+    
+    elif c=='p':
+        y=int(stack.pop())
+        x=int(stack.pop())
+        f[x][y]=stack.pop()
+        '''for lll in f[:12]:
+            print(lll[:29])'''
+        
+    elif c=='g':
+        y=int(stack.pop())
+        x=int(stack.pop())
+        stack.append(int(f[x][y]))
+        '''for lll in f[:12]:
+            print(lll[:29])'''
+        
+    elif c.isdigit():
+        stack.append(int(c))
+        #print("append ", c)
+    elif c=='"':
+        #print("search the str")
+        A, B=i, j
+        i=(i+vect[0])%25
+        j=(j+vect[1])%80
+        while f[i][j]!='"':
+            stack.append(f[i][j])
+            i=(i+vect[0])%25
+            j=(j+vect[1])%80
+        #print("b=", b, i, j)
+        #for q in vv[::vect[1]]: stack.append(q)
+        #print("stack: ", stack)
+        
+    elif c==',':
+        print(stack.pop(), end='')
+    elif c=='.':
+        print(int(stack.pop()), end='')
+        
+    elif c=='+':
+        a=stack.pop()
+        b=stack.pop()
+        stack.append(a+b)
+    elif c=='-':
+        a=stack.pop()
+        b=stack.pop()
+        stack.append(abs(b-a))
+    elif c=='*':
+        a=stack.pop()
+        b=stack.pop()
+        stack.append(a*b)
+    elif c=='/':
+        a=stack.pop()
+        b=stack.pop()
+        stack.append(b//a)
+    elif c=='%':
+        a=stack.pop()
+        b=stack.pop()
+        stack.append(b%a)
+    if mov==0:
+        i=(i+vect[0])%25
+        j=(j+vect[1])%80   
+    k=f[i][j]
+    l+=1
+    #print("c, i, j, vect, stack: ", f[i][j], i, j, vect, stack)
+#else: print("end ", i, j, k)
