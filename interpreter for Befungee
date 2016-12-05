@@ -1,0 +1,161 @@
+import random
+import sys
+f=[[' ']*80 for i in range(25)]
+
+def char(c):
+    if c>2**8:
+        exit(0)
+    else:
+        return chr(c)
+inpData=input().split()
+inpI=0
+zzz=sys.stdin
+i=0
+j=0
+while True:
+    v=zzz.read(1)
+ 
+    if v=='': zzz.close(); break
+    elif v=='/n' or v==chr(10):
+        i+=1
+        j=0
+        continue
+    f[i][j]=v
+    j+=1
+
+def move(c):
+    global f
+    global i
+    global j
+    global vect
+    b=len(f[i])
+    if c=='>':
+        j=(j+1)%b
+        while f[i][j]==' ':
+            j=(j+1)%b
+        vect=[0, 1]
+    elif c=='<':
+        j=(j-1)%b
+        while f[i][j]==' ': j=(j-1)%b
+        vect=[0, -1]
+    elif c=='v':
+        i=(i+1)%25
+        while f[i][j]==' ': i=(i+1)%25
+        vect=[1, 0]
+    elif c=='^':
+        i=(i-1)%25
+        while f[i][j]==' ': i=(i-1)%25
+        vect=[-1, 0]
+    
+    return vect
+stack=[]
+symb=''
+al=0
+for t in range(25):
+    for r in range(len(f[t])):
+        if f[t][r]!=' ':
+            i=t
+            j=r
+            al=1
+            break
+    if al==1: break
+k=f[i][j]
+l=0
+vect=[0, 1]
+while f[i][j]!='@':
+    mov=0
+    c=f[i][j]
+    if c in '><^v':
+        vect=move(c)
+        mov=1
+    elif c=='_':
+        if stack.pop==0: move('>')
+        else:            move('<')
+        mov=1
+    elif c=='|':
+        if stack.pop()==0: move('v')
+        else:            move('^')
+        mov=1
+    elif c=='?':
+        temp=random.choice('><^v')
+        move(temp)
+        mov=1
+    elif c=='#':
+        i=(i+vect[0])%25
+        j=(j+vect[1])%80
+    
+    elif c==':': stack.append(stack[-1])
+    elif c=='\\':
+        if len(stack)>=2:
+            temp=stack[-1]
+            stack[-1]=stack[-2]
+            stack[-2]=temp
+    
+    elif c=='$': stack.pop()
+    
+    elif c=='p':
+        y=int(stack.pop())
+        x=int(stack.pop())
+        f[x][y]=ord(char(stack.pop()))
+        
+    elif c=='g':
+        y=int(stack.pop())
+        x=int(stack.pop())
+        stack.append(ord(char(f[x][y])))
+        
+    elif c.isdigit():
+        stack.append(int(c))
+    elif c=='"':
+        A, B=i, j
+        i=(i+vect[0])%25
+        j=(j+vect[1])%80
+        while f[i][j]!='"':
+            stack.append(ord(f[i][j]))
+            i=(i+vect[0])%25
+            j=(j+vect[1])%80
+        
+    elif c==',':
+        print(chr(stack.pop()), end='')
+    elif c=='.':
+        print(int(stack.pop()), end='')
+        
+    elif c=='+':
+        a=int(stack.pop())
+        b=int(stack.pop())
+        stack.append(ord(char(a+b)))
+    elif c=='-':
+        a=int(stack.pop())
+        b=int(stack.pop())
+        stack.append(ord(char(abs(b-a))))
+    elif c=='*':
+        a=int(stack.pop())
+        b=int(stack.pop())
+        stack.append(ord(char(a*b)))
+    elif c=='/':
+        a=int(stack.pop())
+        b=int(stack.pop())
+        stack.append(ord(char(b//a)))
+    elif c=='%':
+        a=int(stack.pop())
+        b=int(stack.pop())
+        stack.append(ord(char(b%a)))
+    elif c=='!':
+        if stack.pop()==0:
+            stack.append(1)
+        else:
+            stack.append(0)
+    elif c=='`':
+        if stack[-2]>stack[-1]: stack.append(1)
+        else: stack.append(0)
+    
+    elif c=='&':
+        stack.apppend(int(inpData[inpI]))
+        inpI+=1
+    elif c=='~':
+        stack.append(ord(inpData[inpI]))
+        inpI+=1
+    if mov==0:
+        i=(i+vect[0])%25
+        j=(j+vect[1])%80   
+    k=f[i][j]
+    l+=1
